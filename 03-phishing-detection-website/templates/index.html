@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phishing URL Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 0 20px;
+        }
+        h1 { color: #89b4fa; }
+        form { margin-bottom: 30px; }
+        input[type=text] {
+            width: 70%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #45475a;
+            background: #313244;
+            color: #cdd6f4;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #89b4fa;
+            color: #1e1e2e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background: #74c7ec; }
+        .result-box {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .high { background: #45151c; border: 2px solid #f38ba8; }
+        .moderate { background: #45391c; border: 2px solid #f9e2af; }
+        .low { background: #1c4529; border: 2px solid #a6e3a1; }
+        .verdict-text.high { color: #f38ba8; }
+        .verdict-text.moderate { color: #f9e2af; }
+        .verdict-text.low { color: #a6e3a1; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 6px; }
+        .sev-high { color: #f38ba8; font-weight: bold; }
+        .sev-medium { color: #f9e2af; font-weight: bold; }
+        .sev-low { color: #94e2d5; font-weight: bold; }
+        .meta { font-size: 0.9em; color: #a6adc8; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🎣 Phishing URL Detector</h1>
+    <form method="POST" action="/check">
+        <input type="text" name="url" placeholder="Enter a URL, e.g. http://example.com" required
+               value="{{ result.url if result else '' }}">
+        <button type="submit">Analyze</button>
+    </form>
+
+    {% if result %}
+    <div class="result-box {{ result.verdict_class }}">
+        <h2 class="verdict-text {{ result.verdict_class }}">{{ result.verdict }}</h2>
+        <p><strong>Risk score:</strong> {{ result.risk_score }}</p>
+        <p><strong>Domain:</strong> {{ result.domain }}</p>
+
+        {% if result.domain_age_days is not none %}
+            <p><strong>Domain age:</strong> {{ result.domain_age_days }} days</p>
+        {% elif result.domain_age_error %}
+            <p class="meta">Domain age could not be determined ({{ result.domain_age_error }})</p>
+        {% endif %}
+
+        <p><strong>SSL certificate:</strong>
+            {% if result.ssl_valid %} Valid {% else %} Invalid / Missing {% endif %}
+        </p>
+
+        {% if result.findings %}
+        <h3>Findings ({{ result.findings|length }})</h3>
+        <ul>
+            {% for desc, severity in result.findings %}
+            <li><span class="sev-{{ severity }}">[{{ severity|upper }}]</span> {{ desc }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No suspicious indicators found.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</body>
+</html>

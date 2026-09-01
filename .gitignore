@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor crash-recovery files
+*.save
+*.save.*
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secrets - never commit these
+*.pem
+*.key
+keys/
+.env
+
+# Test artifacts / generated output
+*.db
+*.log
+report.json
+test_usb/
+cover.png
+stego.png
+testfile.txt*
+
+# OS junk
+.DS_Store
+Thumbs.db
