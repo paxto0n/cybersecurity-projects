@@ -17,11 +17,10 @@ Each project folder is self-contained. To run one:
 
 ```bash
 cd 08-encryption-decryption-tool
-pip install -r requirements.txt --break-system-packages   # if a requirements.txt is present, else see per-project deps below
 python3 crypto_tool.py --help
 ```
 
-Most projects here were built with Python 3.13 on Kali and use `pip install <package> --break-system-packages` since Kali's system Python is externally managed. Some projects (#3, #16) are Flask web apps and need to be run as a server; the rest are command-line tools.
+Most projects here were built with Python 3.13 on Kali and use `pip install <package> --break-system-packages` since Kali's system Python is externally managed. Projects #3 and #16 are Flask web apps run as a server; the rest are command-line tools.
 
 ---
 
@@ -76,6 +75,16 @@ Entropy scoring, rockyou.txt breach-list check, HIBP k-anonymity API lookup, and
 cd 05-password-strength-checker
 pip install requests --break-system-packages
 python3 checker.py
+```
+
+### 06 — Wi-Fi Security Analyzer
+Offline analysis of captured 802.11 traffic (.pcap/.cap files): encryption classification (Open/WEP/WPA/WPA2/WPA3), WPS detection, 4-way handshake capture detection, deauth-flood detection, and rogue AP / Evil Twin detection. Built around offline pcap analysis since no monitor-mode-capable wireless adapter is available in this VM; a `live` capture mode is included but is code-complete and unverified against real hardware.
+
+```bash
+cd 06-wifi-security-analyzer
+pip install scapy --break-system-packages
+python3 wifi_analyzer.py analyze -f capture.cap
+python3 wifi_analyzer.py live --iface wlan0mon --duration 60   # untested, needs a monitor-mode adapter
 ```
 
 ### 07 — Vulnerability Assessment Scanner
@@ -180,8 +189,55 @@ python3 access_control.py serve --db mydb.db --port 5060
 python3 selftest.py   # 25-assertion test suite via Flask's test client
 ```
 
+### 17 — Data Leakage Prevention Tool
+Scans files/directories for sensitive data: credit card numbers (Luhn-validated to cut false positives), SSNs, AWS keys, private key material, and generic API tokens. Findings are always redacted in output. Includes a real-time `watch` mode.
+
+```bash
+cd 17-data-leakage-prevention
+pip install watchdog --break-system-packages
+python3 dlp_scanner.py scan -p /path/to/scan
+python3 dlp_scanner.py watch -p /path/to/watch
+```
+
+### 18 — Mobile Application Security Testing
+Static analysis of Android APK files via `androguard` (pure Python, no Android SDK/emulator needed): manifest misconfigurations (debuggable, allowBackup, exported components, cleartext traffic), dangerous permissions, and hardcoded secrets/weak crypto scanned from the app's decompiled string pool (reuses Project #17's DLP detection patterns).
+
+```bash
+cd 18-mobile-app-security-testing
+pip install androguard --break-system-packages
+python3 mobile_security_scanner.py scan -f app.apk
+```
+
+### 19 — SIEM System
+Centralizes and correlates security events across this portfolio. Ingests the shared JSON report schema produced by Projects #13, #14, #15, #17, and #18 directly, normalizes findings into a unified event model, runs burst correlation (multiple high-severity events from one source in a short window), and serves a Flask dashboard API.
+
+```bash
+cd 19-siem-system
+pip install flask --break-system-packages
+python3 siem.py ingest-json -f ../17-data-leakage-prevention/report.json -s dlp_scanner
+python3 siem.py stats
+python3 siem.py correlate --window-minutes 10 --threshold 2
+python3 siem.py serve --port 5070
+```
+
+### 20 — Cyber Range Simulation Environment
+Orchestrates intentionally-vulnerable Docker containers as practice targets, each paired with specific tools from this portfolio. Includes real per-scenario flag verification — e.g. the `sqli-lab` scenario's flag is only captured by actually performing a working SQL injection auth bypass, verified end-to-end against a live container with Project #15's own SQL Injection Detector.
+
+```bash
+cd 20-cyber-range-simulation
+pip install requests --break-system-packages
+python3 cyber_range.py list
+python3 cyber_range.py up sqli-lab
+python3 cyber_range.py check-flag sqli-lab --host 127.0.0.1 --port 5000
+python3 cyber_range.py down sqli-lab
+```
+
 ---
 
 ## Status
 
-Work in progress — 16 of 20 planned projects complete. Project #6 (Wi-Fi Security Analyzer) is skipped: the development VM has no wireless interface or monitor-mode-capable adapter available.
+All 20 projects complete. Notes on scope/verification limits, documented rather than hidden:
+
+- **#1 and #2** were built before this repo's git workflow was established; their exact CLI flags weren't independently re-verified in this session — run `-h`/`--help` to confirm current options.
+- **#6** is built around offline pcap analysis (verified against a real aircrack-ng WPA handshake test capture) since no monitor-mode-capable wireless adapter was available; its `live` capture mode is code-complete but unverified against real hardware.
+- **#13**'s live udev `watch` mode and **#20**'s `weak-ssh-lab` scenario are code-complete but need real hardware/further testing beyond what was verified here.
